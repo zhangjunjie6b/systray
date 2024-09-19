@@ -263,7 +263,9 @@ void registerSystray(void) {
   // SIGSEGV would happen inside AppKit if [NSApp run] is called from a
   // different function, even if that function is called right after this.
   if (floor(NSAppKitVersionNumber) <= /*NSAppKitVersionNumber10_14*/ 1671){
-    [NSApp run];
+    dispatch_async(dispatch_get_main_queue(), ^{
+      [NSApp run];
+    });
   }
 }
 
@@ -273,18 +275,22 @@ void nativeEnd(void) {
 
 int nativeLoop(void) {
   if (floor(NSAppKitVersionNumber) > /*NSAppKitVersionNumber10_14*/ 1671){
-    [NSApp run];
+    dispatch_async(dispatch_get_main_queue(), ^{
+      [NSApp run];
+    });
   }
   return EXIT_SUCCESS;
 }
 
 void nativeStart(void) {
-  owner = [[SystrayAppDelegate alloc] init];
-  NSNotification *launched = [NSNotification
-                                  notificationWithName: NSApplicationDidFinishLaunchingNotification
-                                                object: [NSApplication sharedApplication]];
-  [[NSApplication sharedApplication] setDelegate:owner];
-  [owner applicationDidFinishLaunching:launched];
+  dispatch_async(dispatch_get_main_queue(), ^{
+    owner = [[SystrayAppDelegate alloc] init];
+    NSNotification *launched = [NSNotification
+                                    notificationWithName: NSApplicationDidFinishLaunchingNotification
+                                                  object: [NSApplication sharedApplication]];
+    [[NSApplication sharedApplication] setDelegate:owner];
+    [owner applicationDidFinishLaunching:launched];
+  });
 }
 
 void runInMainThread(SEL method, id object) {
